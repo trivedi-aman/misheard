@@ -13,4 +13,4 @@ from .match import Match, Matcher, best_match
 from .translit import UnsupportedScriptError, plain, script_of, to_roman
 
 __all__ = ["distance", "explain", "Explanation", "Step", "best_match", "Match", "Matcher", "to_roman", "plain", "script_of", "tokenize", "sound_length", "sound_range", "UnsupportedScriptError"]
-__version__ = "0.0.1"
+__version__ = "0.1.0"

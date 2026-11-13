@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 (unreleased)
+
+First release on PyPI.
 
 - Web demo (`demo/app.py`, Gradio): match against districts, people or your own list; compare two names.
 - New `explain(a, b)`: the steps and reasons behind a distance.
@@ -17,7 +19,7 @@
 - `distance` is rounded to 6 decimal places.
 - New `sound_range`; `best_match` pruning uses it and stays exact.
 
-## 0.0.1 (unreleased)
+## 0.0.1 (not published)
 
 - Extracted from Vaani: transliteration (Devanagari, Tamil → phonetic Roman) and feature-weighted phonetic distance.
 - `best_match` with exact length-bound pruning and key-grouped aliases.

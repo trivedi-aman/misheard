@@ -13,7 +13,7 @@ The engine was extracted from Vaani, a multilingual voice agent, where it matche
 
 ## Phase 1: Correctness fixes (0.1.0)
 
-Each one has an `xfail` test. Remove the marker when it's fixed.
+Each one has an `xfail` test. Remove the marker when it's fixed. 1.3, 1.5 and 1.11 carry over to 0.2.0: 1.3 and 1.5 need the phase 2 data to judge.
 
 - [x] **1.1 Anusvara before ह / fricatives.** `सिंह` → `sinh`, should be `singh` (distance to *Singh* is 1.25 today). Anusvara takes the place of the following consonant: ng before velars and h, m before labials, n otherwise.
 - [x] **1.2 ज्ञ.** `ज्ञान` → `jnaan`, distance 2.85 to *Gyan*. Map ज्ञ to `gy`. Marathi says `dny` (*Dnyaneshwar*), so either add a confusion row gy/dny or take a language hint. *Done for Hindi; Marathi `dny` left to the language hint (4.4).*

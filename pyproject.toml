@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "indic-phonetic"
-version = "0.0.1"
+dynamic = ["version"]
 description = "Match Indian names and places by how they sound, across Devanagari, Tamil and Roman script"
 readme = "README.md"
 license = "MIT"
@@ -14,19 +14,36 @@ requires-python = ">=3.10"
 dependencies = []
 keywords = ["phonetic", "fuzzy matching", "indic", "transliteration", "hindi", "tamil", "names", "speech"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Natural Language :: Marathi",
     "Topic :: Text Processing :: Linguistic",
     "Natural Language :: Hindi",
     "Natural Language :: Tamil",
     "Typing :: Typed",
 ]
 
+[project.urls]
+Homepage = "https://github.com/trivedi-aman/indic-phonetic"
+Changelog = "https://github.com/trivedi-aman/indic-phonetic/blob/main/CHANGELOG.md"
+Roadmap = "https://github.com/trivedi-aman/indic-phonetic/blob/main/PLAN.md"
+Issues = "https://github.com/trivedi-aman/indic-phonetic/issues"
+
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 bench = ["rapidfuzz>=3", "jellyfish>=1"]
 demo = ["gradio>=6"]
+
+[tool.hatch.version]
+path = "src/indic_phonetic/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = [".github", "demo"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/indic_phonetic"]
