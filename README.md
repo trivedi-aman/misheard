@@ -69,7 +69,7 @@ The library does not decide whether a match is good enough, because that thresho
 
 ## Scope
 
-- **Scripts:** Devanagari (Hindi, Marathi, …), Tamil, Latin. Other Indic scripts are not supported yet, and their characters are currently dropped silently.
+- **Scripts:** Devanagari (Hindi, Marathi, …), Tamil, Latin. Other scripts are not supported yet and raise `UnsupportedScriptError`.
 - **Made for:** names of people and places, short spoken phrases. It is not a general transliterator: use [indic-transliteration](https://pypi.org/project/indic-transliteration/) or [IndicXlit](https://github.com/AI4Bharat/IndicXlit) for running text.
 
 ## Development

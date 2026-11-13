@@ -47,6 +47,7 @@ _DEV_DIGITS = {chr(0x0966 + i): str(i) for i in range(10)}
 def _devanagari_word(word: str) -> str:
     # Split the word into units: (consonant cluster, vowel, vowel_is_inherent).
     word = unicodedata.normalize("NFD", word)
+    word = word.replace("ज्ञ", "ग्य")           # ज्ञ is spoken gy in Hindi (ज्ञान = gyaan)
     units: list[list] = []
     cluster: list[str] = []
     i = 0
@@ -72,9 +73,12 @@ def _devanagari_word(word: str) -> str:
             continue
         if ch in _DEV_VOWELS:
             units.append([[], _DEV_VOWELS[ch], False])
-        elif ch in (_ANUSVARA, _CHANDRABINDU):
+        elif ch == _ANUSVARA:
             if units:
-                units[-1][1] += "n"         # nasal after the vowel
+                units[-1][1] += _NASAL      # resolved below by the next consonant
+        elif ch == _CHANDRABINDU:
+            if units:
+                units[-1][1] += "n"         # nasalised vowel
         elif ch in _DEV_DIGITS:
             units.append([[], _DEV_DIGITS[ch], False])
         i += 1
@@ -103,9 +107,21 @@ def _devanagari_word(word: str) -> str:
         out.append("".join(cons))
         if kept or not inherent:
             out.append(vowel)
-        elif vowel.endswith("n") and vowel != "a":
-            out.append("n")
-    return "".join(out)
+        elif vowel.endswith(("n", _NASAL)) and vowel != "a":
+            out.append(vowel[-1])
+    return _resolve_anusvara("".join(out))
+
+
+_NASAL = "\x00"
+
+
+def _resolve_anusvara(word: str) -> str:
+    # Anusvara takes the place of the consonant after it: m before labials
+    # (चंपा = champa), ng before h (सिंह = singh), n otherwise (संत = sant;
+    # before k and g that already spells ng: गंगा = ganga).
+    word = re.sub(_NASAL + r"(?=[pbm])", "m", word)
+    word = re.sub(_NASAL + r"(?=h)", "ng", word)
+    return word.replace(_NASAL, "n")
 
 
 # ---------------------------------------------------------------- Tamil
@@ -167,6 +183,8 @@ def _tamil_word(word: str) -> str:
             elif vowel and not geminate and (after_vowel or after_nasal):
                 # a single stop between vowels or after a nasal is voiced
                 cons = "j" if (cons == "ch" and after_nasal) else _TA_VOICED[cons]
+        if cons in ("ng", "nj") and not vowel and nxt[0]:
+            cons = "n"                      # ங்க = ng, ஞ்ச = nj: the next letter carries g/j
         out.append(cons + vowel)
     return "".join(out)
 
@@ -175,20 +193,51 @@ def _tamil_word(word: str) -> str:
 
 _DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 _TAMIL = re.compile(r"[஀-௿]")
+_SUPPORTED = {"LATIN", "DEVANAGARI", "TAMIL"}
+
+
+class UnsupportedScriptError(ValueError):
+    """Text contains letters from a script this library can't read yet."""
+
+    def __init__(self, script: str, text: str):
+        self.script = script
+        super().__init__(
+            f"{script.title()} script is not supported yet (in {text!r}). "
+            "Supported: Devanagari, Tamil, Latin."
+        )
+
+
+def _foreign_script(word: str) -> str | None:
+    for ch in word:
+        if unicodedata.category(ch).startswith(("L", "M")):
+            script = unicodedata.name(ch, "UNKNOWN").split()[0]
+            if script not in _SUPPORTED and script != "COMBINING":
+                return script
+    return None
 
 
 def script_of(text: str) -> str:
+    """"devanagari", "tamil" or "latin"; for other scripts their lowercase name ("telugu")."""
     if _DEVANAGARI.search(text):
         return "devanagari"
     if _TAMIL.search(text):
         return "tamil"
-    return "latin"
+    foreign = _foreign_script(text)
+    return foreign.lower() if foreign else "latin"
 
 
 def to_roman(text: str) -> str:
-    """Convert any mix of Devanagari, Tamil and Latin to phonetic Roman."""
+    """
+    Convert any mix of Devanagari, Tamil and Latin to phonetic Roman.
+
+    Raises UnsupportedScriptError for other scripts (Telugu, Bengali, …)
+    rather than silently dropping them.
+    """
     words = []
     for word in text.split():
+        foreign = _foreign_script(word)
+        if foreign:
+            raise UnsupportedScriptError(foreign, word)
         script = script_of(word)
         if script == "devanagari":
             words.append(_devanagari_word(word))

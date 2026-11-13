@@ -15,12 +15,12 @@ The engine was extracted from Vaani, a multilingual voice agent, where it matche
 
 Each one has an `xfail` test. Remove the marker when it's fixed.
 
-- [ ] **1.1 Anusvara before ह / fricatives.** `सिंह` → `sinh`, should be `singh` (distance to *Singh* is 1.25 today). Anusvara takes the place of the following consonant: ng before velars and h, m before labials, n otherwise.
-- [ ] **1.2 ज्ञ.** `ज्ञान` → `jnaan`, distance 2.85 to *Gyan*. Map ज्ञ to `gy`. Marathi says `dny` (*Dnyaneshwar*), so either add a confusion row gy/dny or take a language hint.
+- [x] **1.1 Anusvara before ह / fricatives.** `सिंह` → `sinh`, should be `singh` (distance to *Singh* is 1.25 today). Anusvara takes the place of the following consonant: ng before velars and h, m before labials, n otherwise.
+- [x] **1.2 ज्ञ.** `ज्ञान` → `jnaan`, distance 2.85 to *Gyan*. Map ज्ञ to `gy`. Marathi says `dny` (*Dnyaneshwar*), so either add a confusion row gy/dny or take a language hint. *Done for Hindi; Marathi `dny` left to the language hint (4.4).*
 - [ ] **1.3 Final-syllable vowels in surnames.** *Patil* / *Patel* = 0.35, the one false accept in Vaani's eval. Options: weight vowel changes higher in the last syllable, or add confusion rows that make specific pairs more expensive. Check that this doesn't break *Gupta/Gupt* or *Amit/Amita*.
-- [ ] **1.4 Fail loudly on unsupported scripts.** Telugu, Kannada, Bengali, … are silently dropped today. Raise an error, or return a result that says what was dropped.
+- [x] **1.4 Fail loudly on unsupported scripts.** Telugu, Kannada, Bengali, … are silently dropped today. Raise an error, or return a result that says what was dropped. *Now raises `UnsupportedScriptError` (a `ValueError`) naming the script.*
 - [ ] **1.5 Audit `_fold`.** The English-spelling rules (`-ey`, `-ow`, `c→k`) were written for the names in Vaani. Collect counterexamples.
-- [ ] **1.6 Tamil nasal + stop clusters.** `வெங்கடேஷ்` → `venggaḍesh` (distance 0.95 to *Venkatesh*, should be near 0): ங் gives `ng` and the following க is voiced to `g` as well. Check ஞ்ச, ந்த, ண்ட, ம்ப too.
+- [x] **1.6 Tamil nasal + stop clusters.** `வெங்கடேஷ்` → `venggaḍesh` (distance 0.95 to *Venkatesh*, should be near 0): ங் gives `ng` and the following க is voiced to `g` as well. Check ஞ்ச, ந்த, ண்ட, ம்ப too. *Fixed ங்க and ஞ்ச (the others were already right); added confusion row t/ḍ 0.30 for Tamil voiced ட written t, so Venkatesh/வெங்கடேஷ் is 0.55.*
 - [x] **1.7 Titles and honorifics.** *Shri Mohan Lal* vs *Mohan Lal* was 2.3, worse than *Mohan* vs *Rohan* (1.7). Titles (Shri, Smt, Dr, திரு, …) and honorific words (ji, sahab, bhai, …) are now dropped; joined honorifics (*Rameshbhai*, *Hansaben*) cost 0.1 to drop; *Devi*, *Kumar*, *Kumari* cost 0.5 to drop. Joined *ji* is kept (*Balaji*, *Shivaji*).
 - [x] **1.8 Word order beyond two words.** *Kumar Ramesh Singh* vs *Ramesh Kumar Singh* was 10.2. Names of up to 4 words are now compared in every order, with a 0.2 penalty for any reorder.
 - [x] **1.9 Initials.** *R. Kumar* vs *Ramesh Kumar* was 2.7. An initial now matches a word starting with the same letter for 0.3 (1.5 otherwise); *R.K.* splits into two initials. `best_match` pruning uses length ranges so it stays exact.

@@ -22,6 +22,13 @@ def test_variants_are_close_and_different_names_are_far():
     assert min(distance(a, b) for a, b in far) > 1.5
 
 
+def test_fixed_gaps():
+    assert distance("Singh", "सिंह") == 0
+    assert distance("Gyan", "ज्ञान") <= 0.25
+    assert distance("Venkatesh", "வெங்கடேஷ்") < 0.8
+    assert distance("Natarajan", "நடராஜன்") < 0.8
+
+
 def test_swapped_word_order_costs_a_little():
     assert 0 < distance("Sultan Meena", "Meena Sultan") < 0.5
 

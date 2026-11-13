@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Fix: anusvara before h is ng (सिंह = singh) and before labials m (चंपा = champa).
+- Fix: ज्ञ is gy (ज्ञान = gyaan).
+- Fix: Tamil ங்க and ஞ்ச no longer double the consonant (வெங்கடேஷ் = vengaḍesh, was venggaḍesh).
+- New confusion row t/ḍ for Tamil ட romanised t (Natarajan, Venkatesh).
+- Unsupported scripts raise `UnsupportedScriptError` instead of being silently dropped; `script_of` names them.
 - Titles and honorifics are ignored (Shri, Smt, Dr, ji, sahab, bhai, திரு, श्री…); joined honorifics (Rameshbhai) and Devi/Kumar/Kumari are optional for a small penalty.
 - Initials match words with the same first letter (R. Kumar / Ramesh Kumar).
 - Names of up to 4 words are compared in any order (was: 2).
