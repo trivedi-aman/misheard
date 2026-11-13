@@ -1,6 +1,6 @@
 import pytest
 
-from indic_phonetic import best_match, distance
+from indic_phonetic import Match, Matcher, best_match, distance
 
 PLACES = ["Barmer", "Jaipur", "Jodhpur", "Sikar", "Chennai", "Lucknow", "Mangalore", "Bengaluru"]
 
@@ -46,3 +46,40 @@ def test_nothing_heard():
 def test_top_must_be_positive():
     with pytest.raises(ValueError):
         best_match("Barmer", PLACES, top=0)
+
+
+def _brute(heard, refs, top):
+    """Score everything, keep each key's best, stable on ties: the reference behaviour."""
+    best = {}
+    for r in refs:
+        key, text = (r, r) if isinstance(r, str) else r
+        d = distance(heard, text)
+        if d != float("inf") and (key not in best or d < best[key].distance):
+            best[key] = Match(key, text, d)
+    return sorted(best.values(), key=lambda m: m.distance)[:top]
+
+
+def test_matcher_equals_brute_force_on_random_lists():
+    import csv
+    import random
+    from pathlib import Path
+
+    rng = random.Random(1)
+    data = Path(__file__).resolve().parents[1] / "benchmarks" / "data"
+    with open(data / "districts.csv", encoding="utf-8") as f:
+        districts = [r["district"] for r in csv.DictReader(f)]
+    extras = ["R. Kumar", "Ramesh Kumar", "Sunita Devi", "Shri Mohan Lal", "बाड़मेर", "முருகன்", "Mohan", "Rohan"]
+    for trial in range(30):
+        refs = rng.sample(districts, 60) + extras
+        refs = [(rng.randrange(40), t) if rng.random() < 0.3 else t for t in refs]    # shared keys
+        heard = rng.choice(districts + extras)
+        heard = heard[:-1] if rng.random() < 0.5 else heard + "a"
+        top = rng.choice([1, 3, 5])
+        assert Matcher(refs).best_match(heard, top) == _brute(heard, refs, top), (trial, heard)
+
+
+def test_matcher_is_reusable():
+    m = Matcher(PLACES)
+    assert len(m) == len(PLACES)
+    assert m.best_match("Baadmer", top=1)[0].text == "Barmer"
+    assert m.best_match("Chenai", top=1)[0].text == "Chennai"

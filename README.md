@@ -45,7 +45,9 @@ English phonetic codes (Soundex, Metaphone) follow English spelling rules and do
 | | |
 | --- | --- |
 | `distance(a, b) -> float` | Phonetic distance between two names, in any mix of scripts. 0 means the same sounds. |
-| `best_match(heard, references, top=3) -> list[Match]` | Closest references, nearest first. References are strings or `(key, text)` pairs; keys group aliases (*Bangalore*, *Bengaluru*) under one result. |
+| `Matcher(references)` | Prepare a reference list once. References are strings or `(key, text)` pairs; keys group aliases (*Bangalore*, *Bengaluru*) under one result. |
+| `Matcher.best_match(heard, top=3) -> list[Match]` | Closest references, nearest first; equal distances keep list order. |
+| `best_match(heard, references, top=3)` | Shortcut for a one-off list. |
 | `to_roman(text) -> str` | Devanagari / Tamil / Latin → phonetic Roman. |
 | `plain(text) -> str` | Remove the retroflex marks: *baaṛmer* → *baarmer*. |
 | `script_of(text) -> str` | `"devanagari"`, `"tamil"` or `"latin"`. |
@@ -65,7 +67,7 @@ The library does not decide whether a match is good enough, because that thresho
 | rule-generated | name | 246 | 99.6% | 96.3% | 100.0% |
 | rule-generated | place | 170 | 97.6% | 90.0% | 100.0% |
 
-**Read these numbers with care.** None of the items are real speech-to-text output yet. The rule-generated variants use the same confusions the engine models, and the handwritten ones were written by the author. Building a benchmark from data the engine wasn't designed around is the top item in [PLAN.md](PLAN.md). Speed is also behind for now: about 25 ms per lookup against 780 places, compared with 0.1 ms for Levenshtein.
+**Read these numbers with care.** None of the items are real speech-to-text output yet. The rule-generated variants use the same confusions the engine models, and the handwritten ones were written by the author. Building a benchmark from data the engine wasn't designed around is the top item in [PLAN.md](PLAN.md). Speed is still behind: about 5 ms per lookup against 780 places with a `Matcher`, compared with 0.1 ms for Levenshtein. A compiled core is planned.
 
 ## Scope
 

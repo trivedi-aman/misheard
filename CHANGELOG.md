@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- New `Matcher` class: prepare references once, match many times. About 5× faster (25 ms → 5 ms against 780 places).
+- Equal distances now keep the order of the reference list.
 - Fix: anusvara before h is ng (सिंह = singh) and before labials m (चंपा = champa).
 - Fix: ज्ञ is gy (ज्ञान = gyaan).
 - Fix: Tamil ங்க and ஞ்ச no longer double the consonant (வெங்கடேஷ் = vengaḍesh, was venggaḍesh).

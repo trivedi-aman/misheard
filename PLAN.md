@@ -39,10 +39,10 @@ This phase decides whether the library is actually better, so it matters more th
 
 ## Phase 3: Speed (0.3.0)
 
-25 ms per lookup against 780 places, about 200× slower than Levenshtein.
+Was 25 ms per lookup against 780 places; 3.1, 3.2 and 4.1 brought it to about 5 ms (Levenshtein: 0.1 ms).
 
-- [ ] **3.1 Profile.** The likely costs are the pure-Python DP and `sub_cost` lookups. Precompute a token → int index and a dense cost matrix.
-- [ ] **3.2 Cache tokenized references** inside `best_match` (or a `Matcher` object built once from the references).
+- [x] **3.1 Profile.** The biggest cost was `best_match` re-sorting all results after every reference (quadratic), then the DP and `sub_cost` lookups. Now: top-k kept incrementally, a token → int index with a dense cost matrix, and the DP stops early once it can't beat the current top-k.
+- [x] **3.2 Cache tokenized references** inside `best_match` (or a `Matcher` object built once from the references).
 - [ ] **3.3 Blocking for large lists** (10⁵+ names): index the first consonant classes or a coarse phonetic key, and only score that bucket.
 - [ ] **3.4 Rust kernel (PyO3 + maturin).** Compile only the hot loop: weighted edit distance over int token ids, the word-swap logic, and batch scoring with pruning over a `Matcher`'s references. Cost tables are passed in as arrays, so tuning weights or learning them (phase 5) never touches Rust. Transliteration, folding and tokenizing stay in Python: they change often, contributors can fix them without Rust, and with 3.2 they run once per reference. Ship `abi3` wheels (Linux/macOS/Windows, x86 and ARM) from CI. The pure-Python kernel stays as the fallback and as the reference: a property test checks both give identical distances on random inputs. Not C/C++: Rust's packaging via maturin is simpler and the parser input is untrusted.
 
@@ -50,7 +50,7 @@ Order: 3.1 and 3.2 first (they define the kernel boundary), then 3.4, then 3.3. 
 
 ## Phase 4: API and configurability (0.4.0)
 
-- [ ] **4.1 `Matcher` class** holding references, costs and confusions: `Matcher(refs, confusions=...)`. The module-level functions remain as shortcuts.
+- [x] **4.1 `Matcher` class** holding prepared references: `Matcher(refs).best_match(heard)`. `best_match` remains as a shortcut. Costs and confusions as parameters come with 4.2 / 5.1.
 - [ ] **4.2 Custom confusion tables**: merge with or replace the defaults.
 - [ ] **4.3 `explain(a, b)`** that returns the alignment and each step's cost. Useful for debugging and for the README, and required by 5.4: learning counts substitutions from these alignments.
 - [ ] **4.4 Language hint** (`lang="mr"`) for Marathi ज्ञ, Bengali v→b, and similar.

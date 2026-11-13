@@ -140,22 +140,58 @@ def indel_cost(tok: str) -> float:
     return INDEL_VOWEL if tok in VOWELS else INDEL
 
 
+# The DP runs on integer ids with the costs precomputed, so the inner loop is
+# list indexing only. This is also the boundary a compiled kernel would
+# replace (PLAN.md 3.4).
+_ID = {tok: i for i, tok in enumerate(_TOKENS)}
+_SUB = [[sub_cost(a, b) for b in _TOKENS] for a in _TOKENS]
+_INDEL = [indel_cost(t) for t in _TOKENS]
+INF = float("inf")
+
+
+def _ids(sounds: tuple[str, ...]) -> tuple[int, ...]:
+    return tuple(_ID[t] for t in sounds)
+
+
+def _seq(ia: tuple[int, ...], ib: tuple[int, ...], cutoff: float = INF) -> float:
+    """
+    Weighted edit distance over token ids.
+
+    Stops early once every cell of a row exceeds `cutoff`: the result is then
+    some value above `cutoff`, not the exact distance.
+    """
+    sub, indel = _SUB, _INDEL
+    prev = [0.0]
+    acc = 0.0
+    for y in ib:
+        acc += indel[y]
+        prev.append(acc)
+    for x in ia:
+        row, dx = sub[x], indel[x]
+        left = prev[0] + dx
+        cur = [left]
+        row_min = left
+        for j, y in enumerate(ib):
+            d = prev[j] + row[y]
+            t = prev[j + 1] + dx
+            if t < d:
+                d = t
+            t = left + indel[y]
+            if t < d:
+                d = t
+            cur.append(d)
+            left = d
+            if d < row_min:
+                row_min = d
+        if row_min > cutoff:
+            return row_min
+        prev = cur
+    return prev[-1]
+
+
 def sequence_distance(pa: tuple[str, ...], pb: tuple[str, ...]) -> float:
     """Weighted edit distance between two sound sequences."""
-    n, m = len(pa), len(pb)
-    prev = [0.0] * (m + 1)
-    for j in range(1, m + 1):
-        prev[j] = prev[j - 1] + indel_cost(pb[j - 1])
-    for i in range(1, n + 1):
-        cur = [prev[0] + indel_cost(pa[i - 1])] + [0.0] * m
-        for j in range(1, m + 1):
-            cur[j] = min(
-                prev[j - 1] + sub_cost(pa[i - 1], pb[j - 1]),
-                prev[j] + indel_cost(pa[i - 1]),
-                cur[j - 1] + indel_cost(pb[j - 1]),
-            )
-        prev = cur
-    return prev[m]
+    return _seq(_ids(pa), _ids(pb))
 
 
 # ---- words -----------------------------------------------------------------
@@ -204,6 +240,7 @@ _OPTIONAL = {_key(w) for w in OPTIONAL_WORDS}
 
 class _Word(NamedTuple):
     sounds: tuple[str, ...]
+    ids: tuple[int, ...]
     initial: str | None     # the letter, when the word is an initial like "R."
     first: str              # first letter of the romanised word
 
@@ -214,11 +251,11 @@ def _word(text: str) -> _Word | None:
         return None
     is_initial = len(text) == 1 and text.isascii() and text.isalpha()
     key = _key(text)
-    return _Word(sounds, text.lower() if is_initial else None, key[:1])
+    return _Word(sounds, _ids(sounds), text.lower() if is_initial else None, key[:1])
 
 
 @lru_cache(maxsize=50_000)
-def _variants(text: str) -> tuple[tuple[float, tuple[_Word, ...]], ...]:
+def _variants(text: str) -> "Variants":
     """The ways a name may be said, each with its penalty."""
     raw = text.replace(".", " ").split()                 # "R.K. Narayan" -> R K Narayan
     raw = [w for w in raw if _word(w)]
@@ -249,19 +286,19 @@ def _variants(text: str) -> tuple[tuple[float, tuple[_Word, ...]], ...]:
     return tuple((p, w) for w, p in out.items())
 
 
-def _word_cost(x: _Word, y: _Word) -> float:
+def _word_cost(x: _Word, y: _Word, cutoff: float = INF) -> float:
     if x.initial or y.initial:
         if x.initial and y.initial:
             return 0.0 if x.initial == y.initial else INITIAL_MISMATCH
         letter, other = (x.initial, y) if x.initial else (y.initial, x)
         return INITIAL_COST if other.first == letter else INITIAL_MISMATCH
-    return sequence_distance(x.sounds, y.sounds)
+    return _seq(x.ids, y.ids, cutoff)
 
 
-def _words_distance(wa: tuple[_Word, ...], wb: tuple[_Word, ...]) -> float:
+def _words_distance(wa: tuple[_Word, ...], wb: tuple[_Word, ...], cutoff: float = INF) -> float:
     n = len(wa)
     if n == len(wb):
-        cost = [[_word_cost(x, y) for y in wb] for x in wa]
+        cost = [[_word_cost(x, y, cutoff) for y in wb] for x in wa]
         best = sum(cost[i][i] for i in range(n))
         if 1 < n <= MAX_PERMUTED_WORDS:
             for perm in permutations(range(n)):
@@ -269,7 +306,22 @@ def _words_distance(wa: tuple[_Word, ...], wb: tuple[_Word, ...]) -> float:
         return best
     # A different number of words (a dropped surname, "Meenakshisundaram" as
     # one word): compare as one joined sequence, so every missing sound costs.
-    return sequence_distance(tuple(t for w in wa for t in w.sounds), tuple(t for w in wb for t in w.sounds))
+    return _seq(tuple(t for w in wa for t in w.ids), tuple(t for w in wb for t in w.ids), cutoff)
+
+
+Variants = tuple[tuple[float, tuple[_Word, ...]], ...]
+
+
+def _variants_distance(va: Variants, vb: Variants, cutoff: float = INF) -> float:
+    """Cheapest pairing of two names' variants. Above `cutoff`, only a lower bound."""
+    best = INF
+    for pa, wa in va:
+        for pb, wb in vb:
+            limit = min(best, cutoff) - pa - pb
+            d = pa + pb + _words_distance(wa, wb, limit)
+            if d < best:
+                best = d
+    return best
 
 
 def distance(a: str, b: str) -> float:
@@ -283,9 +335,8 @@ def distance(a: str, b: str) -> float:
     """
     va, vb = _variants(a), _variants(b)
     if not va or not vb:
-        return float("inf")
-    best = min(pa + pb + _words_distance(wa, wb) for pa, wa in va for pb, wb in vb)
-    return round(best, 6)       # 1.8, not 1.7999999999999998
+        return INF
+    return round(_variants_distance(va, vb), 6)       # 1.8, not 1.7999999999999998
 
 
 @lru_cache(maxsize=50_000)
