@@ -62,12 +62,14 @@ INDEL_VOWEL = 0.6
 
 _TOKENS = sorted(set(CONSONANTS) | set(VOWELS), key=len, reverse=True)
 
-def _load_confusions() -> dict[frozenset, float]:
+def _load_confusions() -> list[dict]:
     text = files(__package__).joinpath("data", "confusions.csv").read_text(encoding="utf-8")
-    return {frozenset((r["a"], r["b"])): float(r["cost"]) for r in csv.DictReader(io.StringIO(text))}
+    return list(csv.DictReader(io.StringIO(text)))
 
 
-CONFUSIONS = _load_confusions()
+_CONFUSION_ROWS = _load_confusions()
+CONFUSIONS = {frozenset((r["a"], r["b"])): float(r["cost"]) for r in _CONFUSION_ROWS}
+CONFUSION_NOTES = {frozenset((r["a"], r["b"])): r["why"] for r in _CONFUSION_ROWS}
 
 # ---- tokenizer -------------------------------------------------------------
 
@@ -254,36 +256,48 @@ def _word(text: str) -> _Word | None:
     return _Word(sounds, _ids(sounds), text.lower() if is_initial else None, key[:1])
 
 
+# A note says what a variant changed: (word as written, kind, cost), kind
+# being "title", "optional" (Devi, Kumar) or "suffix" (Rameshbhai).
+Note = tuple[str, str, float]
+
+
 @lru_cache(maxsize=50_000)
-def _variants(text: str) -> "Variants":
-    """The ways a name may be said, each with its penalty."""
+def _variants_detailed(text: str) -> tuple[tuple[float, tuple["_Word", ...], tuple[Note, ...]], ...]:
+    """The ways a name may be said, each with its penalty and what was changed."""
     raw = text.replace(".", " ").split()                 # "R.K. Narayan" -> R K Narayan
     raw = [w for w in raw if _word(w)]
     core = [w for w in raw if _key(w) not in _TITLES] or raw
-    options: list[list[tuple[float, _Word | None]]] = []
+    dropped = tuple((w, "title", 0.0) for w in raw if w not in core)
+    options: list[list[tuple[float, _Word | None, Note | None]]] = []
     for w in core:
         word = _word(w)
-        choices: list[tuple[float, _Word | None]] = [(0.0, word)]
+        choices: list[tuple[float, _Word | None, Note | None]] = [(0.0, word, None)]
         key = _key(w)
         if key in _OPTIONAL and len(core) > 1:
-            choices.append((OPTIONAL_PENALTY, None))
+            choices.append((OPTIONAL_PENALTY, None, (w, "optional", OPTIONAL_PENALTY)))
         elif word.initial is None:
             roman = _fold(to_roman(w))
             for suf in _SUFFIXES:
                 if key.endswith(suf) and len(key) - len(suf) >= 3 and plain(roman).endswith(suf):
                     stem = _word(roman[: len(roman) - len(suf)])
                     if stem:
-                        choices.append((SUFFIX_PENALTY, stem))
+                        choices.append((SUFFIX_PENALTY, stem, (w, "suffix", SUFFIX_PENALTY)))
                     break
         options.append(choices)
-    out = {}
+    out: dict = {}
     for combo in product(*options):
-        words = tuple(w for _, w in combo if w is not None)
+        words = tuple(w for _, w, _ in combo if w is not None)
         if words:
-            pen = round(sum(p for p, _ in combo), 6)
-            if words not in out or out[words] > pen:
-                out[words] = pen
-    return tuple((p, w) for w, p in out.items())
+            pen = round(sum(p for p, _, _ in combo), 6)
+            if words not in out or out[words][0] > pen:
+                out[words] = (pen, dropped + tuple(n for _, _, n in combo if n))
+    return tuple((p, w, notes) for w, (p, notes) in out.items())
+
+
+@lru_cache(maxsize=50_000)
+def _variants(text: str) -> "Variants":
+    """The ways a name may be said, each with its penalty."""
+    return tuple((p, w) for p, w, _ in _variants_detailed(text))
 
 
 def _word_cost(x: _Word, y: _Word, cutoff: float = INF) -> float:

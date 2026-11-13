@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- New `explain(a, b)`: the steps and reasons behind a distance.
 - New `Matcher` class: prepare references once, match many times. About 5× faster (25 ms → 5 ms against 780 places).
 - Equal distances now keep the order of the reference list.
 - Fix: anusvara before h is ng (सिंह = singh) and before labials m (चंपा = champa).

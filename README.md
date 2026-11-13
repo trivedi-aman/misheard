@@ -48,6 +48,7 @@ English phonetic codes (Soundex, Metaphone) follow English spelling rules and do
 | `Matcher(references)` | Prepare a reference list once. References are strings or `(key, text)` pairs; keys group aliases (*Bangalore*, *Bengaluru*) under one result. |
 | `Matcher.best_match(heard, top=3) -> list[Match]` | Closest references, nearest first; equal distances keep list order. |
 | `best_match(heard, references, top=3)` | Shortcut for a one-off list. |
+| `explain(a, b) -> Explanation` | The steps behind a distance: each sound kept, swapped, added or dropped, with the reason from the confusion table, plus titles ignored, words left out, initials and reordering. `print()` it for a readable table. |
 | `to_roman(text) -> str` | Devanagari / Tamil / Latin → phonetic Roman. |
 | `plain(text) -> str` | Remove the retroflex marks: *baaṛmer* → *baarmer*. |
 | `script_of(text) -> str` | `"devanagari"`, `"tamil"` or `"latin"`. |

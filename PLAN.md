@@ -52,7 +52,7 @@ Order: 3.1 and 3.2 first (they define the kernel boundary), then 3.4, then 3.3. 
 
 - [x] **4.1 `Matcher` class** holding prepared references: `Matcher(refs).best_match(heard)`. `best_match` remains as a shortcut. Costs and confusions as parameters come with 4.2 / 5.1.
 - [ ] **4.2 Custom confusion tables**: merge with or replace the defaults.
-- [ ] **4.3 `explain(a, b)`** that returns the alignment and each step's cost. Useful for debugging and for the README, and required by 5.4: learning counts substitutions from these alignments.
+- [x] **4.3 `explain(a, b)`** that returns the alignment and each step's cost. Useful for debugging and for the README, and required by 5.4: learning counts substitutions from these alignments.
 - [ ] **4.4 Language hint** (`lang="mr"`) for Marathi ज्ञ, Bengali v→b, and similar.
 - [ ] **4.5 Decide on confidence grading.** Either keep it out (current choice) or offer `grade(matches, high=..., margin=...)` as an optional helper.
 - [ ] **4.6 Command-line tool.** `python -m indic_phonetic Barmer बाड़मेर` prints the distance (and the alignment, once 4.3 exists); `python -m indic_phonetic --refs places.txt Baadmer` prints the best matches. For trying the library without writing code.
