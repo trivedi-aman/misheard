@@ -35,7 +35,8 @@ English phonetic codes (Soundex, Metaphone) follow English spelling rules and do
 2. **Tokenize** into sounds, folding English-style spellings first (*x→ks*, *-ey→e*, doubled letters).
 3. **Score substitutions by articulatory features**: place and manner of articulation, voicing and aspiration for consonants; height, backness and length for vowels. A swap between similar sounds is cheap, a swap between unrelated sounds is expensive.
 4. **Override with known confusions** ([`data/confusions.csv`](src/indic_phonetic/data/confusions.csv)): v/w, t/ṭ, ph/f, Tamil k/g, and so on. Each row says why it's there.
-5. **Weighted edit distance** over the sounds. Dropping a silent *a* or an *h* costs little. Two-word names are also compared in swapped order (*Meena Sultan* vs *Sultan Meena*).
+5. **Weighted edit distance** over the sounds. Dropping a silent *a* or an *h* costs little.
+6. **Words as people say them.** Titles and honorifics are ignored (*Shri*, *Smt*, *Dr*, *ji*, *sahab*). A joined honorific (*Rameshbhai*) costs 0.1 to drop, and *Devi* or *Kumar* cost 0.5. An initial matches a word with the same first letter (*R. Kumar* / *Ramesh Kumar* = 0.3). Words may come in any order (*Kumar Ramesh Singh*) for 0.2.
 
 `best_match` skips references whose length alone rules them out. It gives the same result as scoring every reference, with far fewer comparisons.
 

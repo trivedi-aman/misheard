@@ -19,8 +19,8 @@ Levenshtein and Metaphone get the same romanisation of native script that indic-
 | Matcher | ms per item |
 | --- | --- |
 | Levenshtein | 0.12 |
-| Metaphone | 0.36 |
-| indic-phonetic | 25.15 |
+| Metaphone | 0.37 |
+| indic-phonetic | 25.44 |
 
 ## indic-phonetic misses
 

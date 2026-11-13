@@ -9,15 +9,17 @@ match are returned for the caller to judge.
 
 Every sound missing from one side costs at least the cheapest deletion, so a
 reference much longer or shorter than what was heard cannot beat matches
-already found. References are visited in order of length difference and the
-search stops once that lower bound exceeds the current `top`-th best. The
+already found. Lengths are ranges (a dropped "Devi", an initial standing for
+a whole word), and the gap between the two ranges gives the lower bound.
+References are visited in order of that gap and the search stops once the
+bound exceeds the current `top`-th best. The
 result is exactly what scoring every reference would give, with far fewer
 distance computations.
 """
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
 
-from .distance import INDEL_CHEAP, distance, sound_length
+from .distance import INDEL_CHEAP, distance, sound_range
 
 
 @dataclass(frozen=True)
@@ -38,16 +40,21 @@ def best_match(heard: str, references: Iterable[str | tuple[Hashable, str]], top
     if top < 1:
         raise ValueError("top must be at least 1")
     refs = [(r, r) if isinstance(r, str) else (r[0], r[1]) for r in references]
-    n = sound_length(heard)
-    if n == 0 or not refs:
+    lo, hi = sound_range(heard)
+    if lo == 0 or not refs:
         return []
     floor = min(INDEL_CHEAP.values())
+
+    def gap(text: str) -> float:
+        r_lo, r_hi = sound_range(text)
+        return max(0, r_lo - hi, lo - r_hi)
+
     best: dict[Hashable, Match] = {}
     ranked: list[Match] = []
-    for key, text in sorted(refs, key=lambda kt: abs(sound_length(kt[1]) - n)):
-        if len(ranked) >= top and floor * abs(sound_length(text) - n) > ranked[top - 1].distance:
+    for key, text in sorted(refs, key=lambda kt: gap(kt[1])):
+        if len(ranked) >= top and floor * gap(text) > ranked[top - 1].distance:
             break
-        d = round(distance(heard, text), 6)     # 2.85, not 2.8499999999999996
+        d = distance(heard, text)
         if key in best and best[key].distance <= d:
             continue
         best[key] = Match(key, text, d)
