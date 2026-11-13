@@ -20,6 +20,15 @@ best_match("Rohun Varma", [("C1", "Rohan Verma"), ("C2", "Mohan Verma"), ("C3", 
 
 > **Status: pre-alpha (0.0.x).** The API may change. Known gaps are listed in [PLAN.md](PLAN.md).
 
+## Try it
+
+```bash
+pip install -e '.[demo]'
+python demo/app.py          # opens http://127.0.0.1:7860
+```
+
+Type a name or place as it was heard, in any supported script, and see the closest matches from Indian districts or a sample list of people, why the top one matched, and what a voice agent might do with it (accept, read back, ask again). A second tab compares two names step by step.
+
 ## Why
 
 Speech-to-text and hand-typed records spell Indian names in many ways: *Barmer / Baadmer / बाड़मेर*, *Lakshmi / Laxmi / லட்சுமி*, *Vikram / Wikram*. Edit distance counts every letter change as equally bad, so it is wrong in both directions:

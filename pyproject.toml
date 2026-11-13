@@ -26,6 +26,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 bench = ["rapidfuzz>=3", "jellyfish>=1"]
+demo = ["gradio>=6"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/indic_phonetic"]

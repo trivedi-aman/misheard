@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Web demo (`demo/app.py`, Gradio): match against districts, people or your own list; compare two names.
 - New `explain(a, b)`: the steps and reasons behind a distance.
 - New `Matcher` class: prepare references once, match many times. About 5× faster (25 ms → 5 ms against 780 places).
 - Equal distances now keep the order of the reference list.
