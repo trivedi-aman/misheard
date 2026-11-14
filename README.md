@@ -1,9 +1,11 @@
-# indic-phonetic
+# misheard
 
 Match Indian names and places by how they **sound**, not how they are spelled, across Devanagari, Tamil and Roman script. Pure Python, no dependencies.
 
+*Formerly published as [`indic-phonetic`](https://pypi.org/project/indic-phonetic/).*
+
 ```python
-from indic_phonetic import distance, best_match, to_roman
+from misheard import distance, best_match, to_roman
 
 to_roman("बाड़मेर")                  # 'baaṛmer'
 to_roman("முருகன்")                  # 'murugan'
@@ -19,10 +21,10 @@ best_match("Rohun Varma", [("C1", "Rohan Verma"), ("C2", "Mohan Verma"), ("C3", 
 ```
 
 ```bash
-pip install indic-phonetic
+pip install misheard
 ```
 
-> **Status: alpha (0.1).** The API may still change before 1.0. Known gaps and the roadmap are in [PLAN.md](https://github.com/trivedi-aman/indic-phonetic/blob/main/PLAN.md).
+> **Status: alpha (0.1).** The API may still change before 1.0. Known gaps and the roadmap are in [PLAN.md](https://github.com/trivedi-aman/misheard/blob/main/PLAN.md).
 
 ## Try it
 
@@ -49,7 +51,7 @@ English phonetic codes (Soundex, Metaphone) follow English spelling rules and do
 1. **Transliterate** Devanagari and Tamil into one phonetic Roman form. Hindi drops the silent *a* (schwa deletion: मोहन → *mohan*). Tamil voices stops between vowels (முருகன் → *murugan*). Retroflex sounds stay marked (ṭ ḍ ṇ ḷ ṛ).
 2. **Tokenize** into sounds, folding English-style spellings first (*x→ks*, *-ey→e*, doubled letters).
 3. **Score substitutions by articulatory features**: place and manner of articulation, voicing and aspiration for consonants; height, backness and length for vowels. A swap between similar sounds is cheap, a swap between unrelated sounds is expensive.
-4. **Override with known confusions** ([`data/confusions.csv`](https://github.com/trivedi-aman/indic-phonetic/blob/main/src/indic_phonetic/data/confusions.csv)): v/w, t/ṭ, ph/f, Tamil k/g, and so on. Each row says why it's there.
+4. **Override with known confusions** ([`data/confusions.csv`](https://github.com/trivedi-aman/misheard/blob/main/src/misheard/data/confusions.csv)): v/w, t/ṭ, ph/f, Tamil k/g, and so on. Each row says why it's there.
 5. **Weighted edit distance** over the sounds. Dropping a silent *a* or an *h* costs little.
 6. **Words as people say them.** Titles and honorifics are ignored (*Shri*, *Smt*, *Dr*, *ji*, *sahab*). A joined honorific (*Rameshbhai*) costs 0.1 to drop, and *Devi* or *Kumar* cost 0.5. An initial matches a word with the same first letter (*R. Kumar* / *Ramesh Kumar* = 0.3). Words may come in any order (*Kumar Ramesh Singh*) for 0.2.
 
@@ -73,9 +75,9 @@ The library does not decide whether a match is good enough, because that thresho
 
 ## Benchmark
 
-782 items: 300 synthetic people, and 745 Indian districts plus aliases. Run it with `python benchmarks/run.py`. Full results are in [benchmarks/results/latest.md](https://github.com/trivedi-aman/indic-phonetic/blob/main/benchmarks/results/latest.md).
+782 items: 300 synthetic people, and 745 Indian districts plus aliases. Run it with `python benchmarks/run.py`. Full results are in [benchmarks/results/latest.md](https://github.com/trivedi-aman/misheard/blob/main/benchmarks/results/latest.md).
 
-| Source | Kind | Items | Levenshtein top-1 | Metaphone top-1 | indic-phonetic top-1 |
+| Source | Kind | Items | Levenshtein top-1 | Metaphone top-1 | misheard top-1 |
 | --- | --- | --- | --- | --- | --- |
 | handwritten | name | 62 | 96.8% | 96.8% | 100.0% |
 | handwritten | place | 50 | 92.0% | 74.0% | 100.0% |
@@ -83,7 +85,7 @@ The library does not decide whether a match is good enough, because that thresho
 | rule-generated | name | 246 | 99.6% | 96.3% | 100.0% |
 | rule-generated | place | 170 | 97.6% | 90.0% | 100.0% |
 
-**Read these numbers with care.** None of the items are real speech-to-text output yet. The rule-generated variants use the same confusions the engine models, and the handwritten ones were written by the author. Building a benchmark from data the engine wasn't designed around is the top item in [PLAN.md](https://github.com/trivedi-aman/indic-phonetic/blob/main/PLAN.md). Speed is still behind: about 5 ms per lookup against 780 places with a `Matcher`, compared with 0.1 ms for Levenshtein. A compiled core is planned.
+**Read these numbers with care.** None of the items are real speech-to-text output yet. The rule-generated variants use the same confusions the engine models, and the handwritten ones were written by the author. Building a benchmark from data the engine wasn't designed around is the top item in [PLAN.md](https://github.com/trivedi-aman/misheard/blob/main/PLAN.md). Speed is still behind: about 5 ms per lookup against 780 places with a `Matcher`, compared with 0.1 ms for Levenshtein. A compiled core is planned.
 
 ## Scope
 

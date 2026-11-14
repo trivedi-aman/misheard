@@ -1,0 +1,48 @@
+# Publishes the indic-phonetic redirect package (legacy/indic-phonetic) when an
+# indic-phonetic-v* tag is pushed. Separate from release.yml so the two
+# projects can't be published by the wrong tag.
+# PyPI setup: project "indic-phonetic" needs a trusted publisher for repository
+# "misheard", workflow "release-indic-phonetic.yml", environment "pypi".
+name: Release indic-phonetic redirect
+
+on:
+  push:
+    tags: ["indic-phonetic-v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: pip install build twine
+      - run: python -m build legacy/indic-phonetic --outdir dist
+      - run: twine check dist/*
+      - name: The redirect installs misheard and old imports still work
+        run: |
+          pip install dist/*.whl
+          python -W error::DeprecationWarning -c "import indic_phonetic" && exit 1 || true
+          python -c "import indic_phonetic, misheard; assert indic_phonetic.distance is misheard.distance"
+      - name: Tag matches package version
+        run: |
+          v=$(grep -m1 '^version' legacy/indic-phonetic/pyproject.toml | cut -d'"' -f2)
+          test "indic-phonetic-v$v" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != version $v"; exit 1; }
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

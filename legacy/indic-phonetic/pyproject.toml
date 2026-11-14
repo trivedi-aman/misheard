@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "indic-phonetic"
+version = "0.1.1"
+description = "Renamed to misheard: pip install misheard"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Aman Trivedi", email = "amantrivedi2003@gmail.com" }]
+requires-python = ">=3.10"
+dependencies = ["misheard>=0.1"]
+classifiers = ["Development Status :: 7 - Inactive"]
+
+[project.urls]
+Homepage = "https://github.com/trivedi-aman/misheard"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/indic_phonetic"]

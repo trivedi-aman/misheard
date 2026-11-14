@@ -1,5 +1,5 @@
 """
-indic-phonetic web demo.
+misheard web demo.
 
     pip install -e '.[demo]'
     python demo/app.py
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import gradio as gr
 
-from indic_phonetic import Matcher, UnsupportedScriptError, distance, explain, to_roman
+from misheard import Matcher, UnsupportedScriptError, distance, explain, to_roman
 
 DATA = Path(__file__).resolve().parents[1] / "benchmarks" / "data"
 
@@ -92,13 +92,13 @@ def compare(a: str, b: str):
 
 
 INTRO = """
-# indic-phonetic
+# misheard
 
 Match Indian names and places by how they **sound**, not how they're spelled, across Roman, Devanagari and Tamil.
 Lower distance means closer; 0 means the same sounds. Pure Python, no dependencies.
 """
 
-with gr.Blocks(title="indic-phonetic") as demo:
+with gr.Blocks(title="misheard") as demo:
     gr.Markdown(INTRO)
     with gr.Tab("Match against a list"):
         with gr.Row():

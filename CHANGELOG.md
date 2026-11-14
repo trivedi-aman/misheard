@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.1.0 (2026-11-13)
+## 0.1.0 (unreleased): first release as `misheard`
+
+Renamed from `indic-phonetic`. The code is the same as `indic-phonetic` 0.1.0; only the names changed:
+`pip install misheard`, `from misheard import ...`.
+
+## indic-phonetic 0.1.0 (2026-11-13)
 
 First release on PyPI.
 

@@ -1,5 +1,5 @@
 """
-Compare indic-phonetic against Levenshtein and Metaphone on names and places
+Compare misheard against Levenshtein and Metaphone on names and places
 as speech-to-text hears them.
 
 Sources, reported separately because they test different things:
@@ -29,7 +29,7 @@ from pathlib import Path
 import jellyfish
 from rapidfuzz.distance import Levenshtein
 
-from indic_phonetic import best_match, plain, to_roman
+from misheard import best_match, plain, to_roman
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
@@ -110,7 +110,7 @@ def phonetic(heard, refs):
     return [m.key for m in best_match(heard, refs, top=3)]
 
 
-MATCHERS = {"Levenshtein": levenshtein, "Metaphone": metaphone, "indic-phonetic": phonetic}
+MATCHERS = {"Levenshtein": levenshtein, "Metaphone": metaphone, "misheard": phonetic}
 
 
 def main() -> None:
@@ -127,31 +127,31 @@ def main() -> None:
             s[0] += 1
             s[1] += bool(keys) and keys[0] == expected
             s[2] += expected in keys
-            if name == "indic-phonetic" and (not keys or keys[0] != expected):
+            if name == "misheard" and (not keys or keys[0] != expected):
                 misses.append((source, kind, heard, expected, keys))
 
     lines = ["# Benchmark", "",
              f"{len(data)} items. Names are matched against {len(NAME_REFS)} synthetic people; "
              f"places against {len(DISTRICTS)} Indian districts plus {len(ALIASES)} aliases.", "",
-             "**Not real speech-to-text output yet** (see PLAN.md). The `rules` rows flatter indic-phonetic "
+             "**Not real speech-to-text output yet** (see PLAN.md). The `rules` rows flatter misheard "
              "because the variants are generated from the same confusions it models.", "",
-             "| Source | Kind | Items | Levenshtein top-1 | Metaphone top-1 | indic-phonetic top-1 | indic-phonetic top-3 |",
+             "| Source | Kind | Items | Levenshtein top-1 | Metaphone top-1 | misheard top-1 | misheard top-3 |",
              "| --- | --- | --- | --- | --- | --- | --- |"]
     for source in ("handwritten", "native", "rules"):
         for kind in ("name", "place"):
-            n = stats[(source, kind, "indic-phonetic")][0]
+            n = stats[(source, kind, "misheard")][0]
             if not n:
                 continue
 
             def pct(m, i=1, source=source, kind=kind, n=n):
                 return f"{100 * stats[(source, kind, m)][i] / n:.1f}%"
             lines.append(f"| {source} | {kind} | {n} | {pct('Levenshtein')} | {pct('Metaphone')} "
-                         f"| {pct('indic-phonetic')} | {pct('indic-phonetic', 2)} |")
-    lines += ["", "Levenshtein and Metaphone get the same romanisation of native script that indic-phonetic uses, "
+                         f"| {pct('misheard')} | {pct('misheard', 2)} |")
+    lines += ["", "Levenshtein and Metaphone get the same romanisation of native script that misheard uses, "
               "so the comparison is about matching, not transliteration.", "",
               "## Time per lookup", "", "| Matcher | ms per item |", "| --- | --- |"]
     lines += [f"| {m} | {1000 * t / len(data):.2f} |" for m, t in elapsed.items()]
-    lines += ["", "## indic-phonetic misses", ""]
+    lines += ["", "## misheard misses", ""]
     if misses:
         lines += ["| Source | Kind | Heard | Expected | Top 3 |", "| --- | --- | --- | --- | --- |"]
         lines += [f"| {s} | {k} | {h} | {e} | {', '.join(map(str, t))} |" for s, k, h, e, t in misses]

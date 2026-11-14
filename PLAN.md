@@ -55,7 +55,7 @@ Order: 3.1 and 3.2 first (they define the kernel boundary), then 3.4, then 3.3. 
 - [x] **4.3 `explain(a, b)`** that returns the alignment and each step's cost. Useful for debugging and for the README, and required by 5.4: learning counts substitutions from these alignments.
 - [ ] **4.4 Language hint** (`lang="mr"`) for Marathi ज्ञ, Bengali v→b, and similar.
 - [ ] **4.5 Decide on confidence grading.** Either keep it out (current choice) or offer `grade(matches, high=..., margin=...)` as an optional helper.
-- [ ] **4.6 Command-line tool.** `python -m indic_phonetic Barmer बाड़मेर` prints the distance (and the alignment, once 4.3 exists); `python -m indic_phonetic --refs places.txt Baadmer` prints the best matches. For trying the library without writing code.
+- [ ] **4.6 Command-line tool.** `python -m misheard Barmer बाड़मेर` prints the distance (and the alignment, once 4.3 exists); `python -m misheard --refs places.txt Baadmer` prints the best matches. For trying the library without writing code.
 
 ## Phase 5: Context and learned costs (0.5.0)
 
@@ -93,15 +93,15 @@ Each script needs a transliterator, tests with real names, and benchmark rows.
 
 ## Phase 7: Publish (1.0.0)
 
-- [ ] GitHub repo, CI (pytest on 3.10–3.13, benchmark on PR)
+- [ ] Run the benchmark on pull requests
 - [ ] Type-check with mypy/pyright, lint with ruff
 - [ ] Docs page: how the costs work, with the confusions table rendered
-- [ ] Publish to PyPI (name `indic-phonetic` was free as of 2026-11-13)
+- [x] GitHub repo, CI, PyPI release via trusted publishing (first as `indic-phonetic` 0.1.0 on 2026-11-13, renamed to `misheard` on 2026-11-14)
 - [ ] Write-up: blog post or short paper on the method and benchmark
 - [ ] Switch Vaani to depend on the library instead of its own copy
 
 ## Open questions
 
-- **Name.** `indic-phonetic` is descriptive and easy to find in search. A more memorable name (*dhvani* is taken on PyPI) could come later.
+- **Name.** Settled: renamed from `indic-phonetic` to `misheard` (2026-11-14). The PyPI description and keywords keep "Indian names, phonetic" for search.
 - **Units.** Distances are unbounded floats. Normalising by length (0–1) would make thresholds portable across short and long names, but it changes every number.
 - **Weights.** The feature weights were set by hand. Learning them is planned in phase 5 (`Costs.fit`), once phase 2 data exists.

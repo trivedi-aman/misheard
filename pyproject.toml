@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "indic-phonetic"
+name = "misheard"
 dynamic = ["version"]
 description = "Match Indian names and places by how they sound, across Devanagari, Tamil and Roman script"
 readme = "README.md"
@@ -29,10 +29,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/trivedi-aman/indic-phonetic"
-Changelog = "https://github.com/trivedi-aman/indic-phonetic/blob/main/CHANGELOG.md"
-Roadmap = "https://github.com/trivedi-aman/indic-phonetic/blob/main/PLAN.md"
-Issues = "https://github.com/trivedi-aman/indic-phonetic/issues"
+Homepage = "https://github.com/trivedi-aman/misheard"
+Changelog = "https://github.com/trivedi-aman/misheard/blob/main/CHANGELOG.md"
+Roadmap = "https://github.com/trivedi-aman/misheard/blob/main/PLAN.md"
+Issues = "https://github.com/trivedi-aman/misheard/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
@@ -40,13 +40,13 @@ bench = ["rapidfuzz>=3", "jellyfish>=1"]
 demo = ["gradio>=6"]
 
 [tool.hatch.version]
-path = "src/indic_phonetic/__init__.py"
+path = "src/misheard/__init__.py"
 
 [tool.hatch.build.targets.sdist]
-exclude = [".github", "demo"]
+exclude = [".github", "demo", "legacy"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/indic_phonetic"]
+packages = ["src/misheard"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

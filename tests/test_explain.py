@@ -2,7 +2,7 @@ import csv
 import random
 from pathlib import Path
 
-from indic_phonetic import distance, explain
+from misheard import distance, explain
 
 DATA = Path(__file__).resolve().parents[1] / "benchmarks" / "data"
 

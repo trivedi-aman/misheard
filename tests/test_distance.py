@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from indic_phonetic import distance, tokenize
+from misheard import distance, tokenize
 
 
 def test_identical_is_zero():

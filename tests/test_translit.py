@@ -1,6 +1,6 @@
 import pytest
 
-from indic_phonetic import UnsupportedScriptError, distance, plain, script_of, to_roman
+from misheard import UnsupportedScriptError, distance, plain, script_of, to_roman
 
 
 @pytest.mark.parametrize("native, roman", [

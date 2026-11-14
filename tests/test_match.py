@@ -1,6 +1,6 @@
 import pytest
 
-from indic_phonetic import Match, Matcher, best_match, distance
+from misheard import Match, Matcher, best_match, distance
 
 PLACES = ["Barmer", "Jaipur", "Jodhpur", "Sikar", "Chennai", "Lucknow", "Mangalore", "Bengaluru"]
 

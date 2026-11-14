@@ -1,7 +1,7 @@
 """How people actually say names: titles, honorifics, initials, word order."""
 import pytest
 
-from indic_phonetic import best_match, distance
+from misheard import best_match, distance
 
 
 @pytest.mark.parametrize("said, record", [
