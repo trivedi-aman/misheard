@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Property tests (Hypothesis) on random Latin, Devanagari and Tamil names: `distance` is symmetric and zero on itself, `explain` adds up to `distance`, `to_roman` raises nothing but `UnsupportedScriptError`, and `Matcher` equals brute-force scoring. Hypothesis is now in the `dev` extra.
+
 ## 0.1.0 (2026-11-14): first release as `misheard`
 
 Renamed from `indic-phonetic`. The code is the same as `indic-phonetic` 0.1.0; only the names changed:

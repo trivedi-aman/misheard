@@ -13,7 +13,7 @@ The engine was extracted from Vaani, a multilingual voice agent, where it matche
 
 ## Phase 1: Correctness fixes (0.1.0)
 
-Each one has an `xfail` test. Remove the marker when it's fixed. 1.3, 1.5 and 1.11 carry over to 0.2.0: 1.3 and 1.5 need the phase 2 data to judge.
+Each one has an `xfail` test. Remove the marker when it's fixed. 1.3 and 1.5 carry over to 0.2.0: they need the phase 2 data to judge.
 
 - [x] **1.1 Anusvara before ह / fricatives.** `सिंह` → `sinh`, should be `singh` (distance to *Singh* is 1.25 today). Anusvara takes the place of the following consonant: ng before velars and h, m before labials, n otherwise.
 - [x] **1.2 ज्ञ.** `ज्ञान` → `jnaan`, distance 2.85 to *Gyan*. Map ज्ञ to `gy`. Marathi says `dny` (*Dnyaneshwar*), so either add a confusion row gy/dny or take a language hint. *Done for Hindi; Marathi `dny` left to the language hint (4.4).*
@@ -25,7 +25,7 @@ Each one has an `xfail` test. Remove the marker when it's fixed. 1.3, 1.5 and 1.
 - [x] **1.8 Word order beyond two words.** *Kumar Ramesh Singh* vs *Ramesh Kumar Singh* was 10.2. Names of up to 4 words are now compared in every order, with a 0.2 penalty for any reorder.
 - [x] **1.9 Initials.** *R. Kumar* vs *Ramesh Kumar* was 2.7. An initial now matches a word starting with the same letter for 0.3 (1.5 otherwise); *R.K.* splits into two initials. `best_match` pruning uses length ranges so it stays exact.
 - [x] **1.10 Round `distance`.** It returned 1.7999999999999998; now rounded to 6 places like `best_match`.
-- [ ] **1.11 Property tests** (Hypothesis): symmetry, `distance(a, a) == 0`, `to_roman` never raises on random Unicode, `best_match` equals brute force on random lists. Also the safety net for the Rust kernel (3.4).
+- [x] **1.11 Property tests** (Hypothesis): symmetry, `distance(a, a) == 0`, `to_roman` never raises on random Unicode, `best_match` equals brute force on random lists. Also the safety net for the Rust kernel (3.4). *In `tests/test_properties.py`, over random Latin, Devanagari and Tamil names with titles, initials and honorifics mixed in; also checks that `explain` steps add up to `distance`. `to_roman` may raise only `UnsupportedScriptError`.*
 
 ## Phase 2: Honest benchmark (0.2.0)
 
