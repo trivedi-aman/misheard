@@ -28,6 +28,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+[project.scripts]
+misheard = "misheard.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/trivedi-aman/misheard"
 Changelog = "https://github.com/trivedi-aman/misheard/blob/main/CHANGELOG.md"

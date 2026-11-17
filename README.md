@@ -28,7 +28,28 @@ pip install misheard
 
 ## Try it
 
-From a clone of the repository:
+From the command line, after `pip install misheard`:
+
+```console
+$ misheard Barmer बाड़मेर
+Barmer ↔ बाड़मेर (baaṛmer)   distance 0.4
+  b  =  b
+  a  →  aa   0.25  vowel length
+  r  →  ṛ   0.15  retroflex flap ड़ is heard and written as r (Baadmer/Barmer)
+  m  =  m
+  e  =  e
+  r  =  r
+
+$ misheard --refs places.txt Baadmer
+Baadmer
+    0.60  Barmer
+    4.95  Bangalore  [BLR]
+    5.00  Jaipur
+```
+
+`places.txt` has one reference per line, or `key<TAB>text` to group aliases. Without names after `--refs`, each line of standard input is one lookup. `-q` prints only distances, `-c extra.csv` merges your own confusion rows, and `misheard --help` lists the rest. `python -m misheard` works too.
+
+For the web demo, from a clone of the repository:
 
 ```bash
 pip install -e '.[demo]'

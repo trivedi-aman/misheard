@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- New command-line tool, `misheard` (or `python -m misheard`): `misheard Barmer बाड़मेर` prints the distance and the steps behind it, `misheard --refs places.txt Baadmer` the closest references. Lookups can come from standard input; `-q` prints distances only and `-c extra.csv` merges confusion rows.
+
 - New `Confusions`: change the confusion table without touching the package. Start from `Confusions.default()`, then `.merged({("v", "b"): 0.1})`, `.without(("v", "b"))`, or read your own with `Confusions.from_csv(path)`. Pass it as `confusions=` to `distance`, `explain`, `Matcher` and `best_match`. The default is unchanged and just as fast.
 - New `misheard.SOUNDS`: every sound a confusion row may name.
 

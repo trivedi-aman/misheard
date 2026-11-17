@@ -55,7 +55,7 @@ Order: 3.1 and 3.2 first (they define the kernel boundary), then 3.4, then 3.3. 
 - [x] **4.3 `explain(a, b)`** that returns the alignment and each step's cost. Useful for debugging and for the README, and required by 5.4: learning counts substitutions from these alignments.
 - [ ] **4.4 Language hint** (`lang="mr"`) for Marathi ज्ञ, Bengali v→b, and similar.
 - [ ] **4.5 Decide on confidence grading.** Either keep it out (current choice) or offer `grade(matches, high=..., margin=...)` as an optional helper.
-- [ ] **4.6 Command-line tool.** `python -m misheard Barmer बाड़मेर` prints the distance (and the alignment, once 4.3 exists); `python -m misheard --refs places.txt Baadmer` prints the best matches. For trying the library without writing code.
+- [x] **4.6 Command-line tool.** `python -m misheard Barmer बाड़मेर` prints the distance (and the alignment, once 4.3 exists); `python -m misheard --refs places.txt Baadmer` prints the best matches. For trying the library without writing code. *Also installed as `misheard`; reads lookups from stdin, `-q` for distances only, `-c` for confusion CSVs (4.2).*
 
 ## Phase 5: Context and learned costs (0.5.0)
 
