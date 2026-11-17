@@ -7,10 +7,10 @@ misheard: match Indian names and places by how they sound.
     >>> distance("Barmer", "बाड़मेर") < distance("Mohan", "Rohan")
     True
 """
-from .distance import distance, sound_length, sound_range, tokenize
+from .distance import SOUNDS, Confusions, distance, sound_length, sound_range, tokenize
 from .explain import Explanation, Step, explain
 from .match import Match, Matcher, best_match
 from .translit import UnsupportedScriptError, plain, script_of, to_roman
 
-__all__ = ["distance", "explain", "Explanation", "Step", "best_match", "Match", "Matcher", "to_roman", "plain", "script_of", "tokenize", "sound_length", "sound_range", "UnsupportedScriptError"]
+__all__ = ["distance", "Confusions", "SOUNDS", "explain", "Explanation", "Step", "best_match", "Match", "Matcher", "to_roman", "plain", "script_of", "tokenize", "sound_length", "sound_range", "UnsupportedScriptError"]
 __version__ = "0.1.0"

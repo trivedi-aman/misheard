@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- New `Confusions`: change the confusion table without touching the package. Start from `Confusions.default()`, then `.merged({("v", "b"): 0.1})`, `.without(("v", "b"))`, or read your own with `Confusions.from_csv(path)`. Pass it as `confusions=` to `distance`, `explain`, `Matcher` and `best_match`. The default is unchanged and just as fast.
+- New `misheard.SOUNDS`: every sound a confusion row may name.
+
 - Property tests (Hypothesis) on random Latin, Devanagari and Tamil names: `distance` is symmetric and zero on itself, `explain` adds up to `distance`, `to_roman` raises nothing but `UnsupportedScriptError`, and `Matcher` equals brute-force scoring. Hypothesis is now in the `dev` extra.
 
 ## 0.1.0 (2026-11-14): first release as `misheard`

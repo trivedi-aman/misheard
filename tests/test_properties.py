@@ -9,7 +9,7 @@ import pytest
 hypothesis = pytest.importorskip("hypothesis")
 from hypothesis import given, settings, strategies as st  # noqa: E402
 
-from misheard import Matcher, Match, UnsupportedScriptError, distance, explain, to_roman, tokenize  # noqa: E402
+from misheard import SOUNDS, Confusions, Matcher, Match, UnsupportedScriptError, distance, explain, to_roman, tokenize  # noqa: E402
 
 # Letters names are actually written with, in the three supported scripts,
 # plus the marks that make the transliterators branch (nukta, virama,
@@ -86,3 +86,24 @@ def _brute(heard, refs, top):
 )
 def test_matcher_equals_brute_force(heard, refs, top):
     assert Matcher(refs).best_match(heard, top) == _brute(heard, refs, top)
+
+
+tables = st.dictionaries(
+    st.tuples(st.sampled_from(sorted(SOUNDS)), st.sampled_from(sorted(SOUNDS))).filter(lambda p: p[0] != p[1]),
+    st.floats(0, 3),
+    max_size=20,
+).map(Confusions.default().merged)
+
+
+@settings(max_examples=100, deadline=None)
+@given(names, st.lists(names, max_size=12), tables)
+def test_matcher_equals_brute_force_with_any_confusion_table(heard, refs, table):
+    got = Matcher(refs, confusions=table).best_match(heard, 3)
+    best = {}
+    for r in refs:
+        d = distance(heard, r, confusions=table)
+        if d != float("inf") and r not in best:
+            best[r] = Match(r, r, d)
+    assert got == sorted(best.values(), key=lambda m: m.distance)[:3]
+    for m in got:
+        assert explain(heard, m.text, confusions=table).distance == m.distance

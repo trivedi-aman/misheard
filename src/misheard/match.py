@@ -24,7 +24,7 @@ from bisect import insort
 from collections.abc import Hashable, Iterable
 from dataclasses import dataclass
 
-from .distance import INDEL_CHEAP, INF, _variants, _variants_distance, sound_range
+from .distance import INDEL_CHEAP, INF, Confusions, _table, _variants, _variants_distance, sound_range
 
 _FLOOR = min(INDEL_CHEAP.values())      # cheapest cost of one missing sound
 _EPS = 1e-6                             # distances are rounded to 6 places
@@ -48,11 +48,15 @@ class Matcher:
     to one thing (an id for a person, aliases for one city). With pairs,
     each key appears at most once in a result, at its best distance.
 
+    confusions: a `Confusions` table to use instead of the default one.
+
     Raises UnsupportedScriptError if a reference is in a script the library
     can't read, so bad data shows up when the list is loaded, not mid-call.
     """
 
-    def __init__(self, references: Iterable[Reference]):
+    def __init__(self, references: Iterable[Reference], *, confusions: Confusions | None = None):
+        self.confusions = _table(confusions)
+        self._sub = self.confusions._sub
         self._refs = []
         order: dict[Hashable, int] = {}
         for r in references:
@@ -86,7 +90,7 @@ class Matcher:
             cutoff = ranked[-1][0] if full else INF
             if full and _FLOOR * gap(ref) > cutoff + _EPS:
                 break
-            d = _variants_distance(heard_variants, variants, cutoff + _EPS)
+            d = _variants_distance(heard_variants, variants, cutoff + _EPS, self._sub)
             if d > cutoff + _EPS:
                 continue
             d = round(d, 6)
@@ -99,7 +103,8 @@ class Matcher:
         return [best[k] for _, _, k in ranked]
 
 
-def best_match(heard: str, references: Iterable[Reference], top: int = 3) -> list[Match]:
+def best_match(heard: str, references: Iterable[Reference], top: int = 3, *,
+               confusions: Confusions | None = None) -> list[Match]:
     """
     The `top` references closest to `heard`, nearest first.
 
@@ -108,4 +113,4 @@ def best_match(heard: str, references: Iterable[Reference], top: int = 3) -> lis
     """
     if top < 1:
         raise ValueError("top must be at least 1")
-    return Matcher(references).best_match(heard, top)
+    return Matcher(references, confusions=confusions).best_match(heard, top)

@@ -18,8 +18,11 @@ mixed up.
 """
 import csv
 import io
+import math
+import os
 import re
-from functools import lru_cache
+from collections.abc import Iterable, Iterator, Mapping
+from functools import cached_property, lru_cache
 from itertools import permutations, product
 from typing import NamedTuple
 from importlib.resources import files
@@ -119,11 +122,19 @@ def tokenize(word: str) -> tuple[str, ...]:
 # ---- costs -----------------------------------------------------------------
 
 def sub_cost(a: str, b: str) -> float:
+    """Cost of hearing sound `b` where `a` was said, with the default confusions."""
     if a == b:
         return 0.0
     override = CONFUSIONS.get(frozenset((a, b)))
     if override is not None:
         return override
+    return feature_cost(a, b)
+
+
+def feature_cost(a: str, b: str) -> float:
+    """Substitution cost from articulatory features alone, before any confusion row."""
+    if a == b:
+        return 0.0
     a_vowel, b_vowel = a in VOWELS, b in VOWELS
     if a_vowel != b_vowel:
         return CROSS_CLASS
@@ -146,23 +157,144 @@ def indel_cost(tok: str) -> float:
 # list indexing only. This is also the boundary a compiled kernel would
 # replace (PLAN.md 3.4).
 _ID = {tok: i for i, tok in enumerate(_TOKENS)}
-_SUB = [[sub_cost(a, b) for b in _TOKENS] for a in _TOKENS]
+_FEATURE = [[feature_cost(a, b) for b in _TOKENS] for a in _TOKENS]
 _INDEL = [indel_cost(t) for t in _TOKENS]
 INF = float("inf")
+
+SOUNDS = tuple(sorted(_TOKENS))
+
+
+# ---- confusion tables ------------------------------------------------------
+
+Pair = tuple[str, str]
+Row = float | tuple[float, str]       # a cost, or (cost, why)
+
+
+class Confusions:
+    """
+    Sound pairs that are routinely mixed up, each with a cost that replaces
+    the feature-based substitution cost (and a reason, shown by `explain`).
+
+        Confusions.default()                          # data/confusions.csv
+        Confusions.default().merged({("v", "b"): 0.2})  # cheaper v/b, e.g. for Bihar
+        Confusions.default().without(("v", "b"))      # v/b back to feature cost
+        Confusions.from_csv("mine.csv")               # only your rows
+        Confusions.default().merged(Confusions.from_csv("extra.csv"))
+
+    Pairs are unordered: ("v", "b") and ("b", "v") are one row. Sounds are
+    the ones `tokenize` returns (see `SOUNDS`). Pass the table as
+    `confusions=` to `distance`, `explain`, `Matcher` or `best_match`.
+    Tables are immutable; `merged` and `without` return new ones.
+    """
+
+    def __init__(self, rows: Mapping[Pair, Row] | Iterable[tuple[str, str, float, str]] = ()):
+        table: dict[frozenset, tuple[str, str, float, str]] = {}
+        items = rows.items() if isinstance(rows, Mapping) else (((r[0], r[1]), (r[2], r[3] if len(r) > 3 else "")) for r in rows)
+        for pair, value in items:
+            a, b = pair
+            cost, why = (value, "") if isinstance(value, (int, float)) else value
+            for s in (a, b):
+                if s not in _ID:
+                    raise ValueError(f"unknown sound {s!r} in confusion ({a!r}, {b!r}); known: {' '.join(SOUNDS)}")
+            if a == b:
+                raise ValueError(f"confusion ({a!r}, {b!r}) pairs a sound with itself")
+            cost = float(cost)
+            if not math.isfinite(cost) or cost < 0:
+                raise ValueError(f"confusion ({a!r}, {b!r}) has cost {cost}; it must be a finite number >= 0")
+            table[frozenset((a, b))] = (a, b, cost, why)
+        self._rows = table
+
+    @classmethod
+    def default(cls) -> "Confusions":
+        """The table shipped with the library (data/confusions.csv)."""
+        return _DEFAULT
+
+    @classmethod
+    def from_csv(cls, path: str | os.PathLike) -> "Confusions":
+        """Read a CSV with columns a, b, cost and optionally why, like data/confusions.csv."""
+        with open(path, encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            missing = {"a", "b", "cost"} - set(reader.fieldnames or ())
+            if missing:
+                raise ValueError(f"{path}: missing column(s) {', '.join(sorted(missing))}")
+            return cls((r["a"].strip(), r["b"].strip(), r["cost"], (r.get("why") or "").strip()) for r in reader)
+
+    def merged(self, other: "Confusions | Mapping[Pair, Row]") -> "Confusions":
+        """This table with `other`'s rows added; where both have a pair, `other` wins."""
+        other = other if isinstance(other, Confusions) else Confusions(other)
+        out = Confusions()
+        out._rows = {**self._rows, **other._rows}
+        return out
+
+    def without(self, *pairs: Pair) -> "Confusions":
+        """This table minus `pairs`, which fall back to their feature cost."""
+        drop = {frozenset(p) for p in pairs}
+        out = Confusions()
+        out._rows = {k: v for k, v in self._rows.items() if k not in drop}
+        return out
+
+    def cost(self, a: str, b: str) -> float:
+        """Substitution cost of `a` for `b` under this table."""
+        return self._sub[_ID[a]][_ID[b]]
+
+    def why(self, a: str, b: str) -> str:
+        row = self._rows.get(frozenset((a, b)))
+        return row[3] if row else ""
+
+    def __iter__(self) -> Iterator[tuple[str, str, float, str]]:
+        """Rows as (a, b, cost, why)."""
+        return iter(self._rows.values())
+
+    def __len__(self) -> int:
+        return len(self._rows)
+
+    def __contains__(self, pair: object) -> bool:
+        return isinstance(pair, tuple) and len(pair) == 2 and frozenset(pair) in self._rows
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Confusions):
+            return NotImplemented
+        return {k: v[2] for k, v in self._rows.items()} == {k: v[2] for k, v in other._rows.items()}
+
+    __hash__ = None  # type: ignore[assignment]
+
+    def __repr__(self) -> str:
+        return f"<Confusions: {len(self)} rows>"
+
+    @cached_property
+    def _sub(self) -> list[list[float]]:
+        """Dense substitution matrix over token ids: features, then these rows on top."""
+        sub = [row[:] for row in _FEATURE]
+        for a, b, cost, _ in self._rows.values():
+            i, j = _ID[a], _ID[b]
+            sub[i][j] = sub[j][i] = cost
+        return sub
+
+
+_DEFAULT = Confusions((r["a"], r["b"], r["cost"], r["why"]) for r in _CONFUSION_ROWS)
+_SUB = _DEFAULT._sub
+
+
+def _table(confusions: "Confusions | None") -> Confusions:
+    if confusions is None:
+        return _DEFAULT
+    if not isinstance(confusions, Confusions):
+        raise TypeError(f"confusions must be a Confusions table, not {type(confusions).__name__}")
+    return confusions
 
 
 def _ids(sounds: tuple[str, ...]) -> tuple[int, ...]:
     return tuple(_ID[t] for t in sounds)
 
 
-def _seq(ia: tuple[int, ...], ib: tuple[int, ...], cutoff: float = INF) -> float:
+def _seq(ia: tuple[int, ...], ib: tuple[int, ...], cutoff: float = INF, sub: list[list[float]] = _SUB) -> float:
     """
-    Weighted edit distance over token ids.
+    Weighted edit distance over token ids, with substitution matrix `sub`.
 
     Stops early once every cell of a row exceeds `cutoff`: the result is then
     some value above `cutoff`, not the exact distance.
     """
-    sub, indel = _SUB, _INDEL
+    indel = _INDEL
     prev = [0.0]
     acc = 0.0
     for y in ib:
@@ -300,19 +432,20 @@ def _variants(text: str) -> "Variants":
     return tuple((p, w) for p, w, _ in _variants_detailed(text))
 
 
-def _word_cost(x: _Word, y: _Word, cutoff: float = INF) -> float:
+def _word_cost(x: _Word, y: _Word, cutoff: float = INF, sub: list[list[float]] = _SUB) -> float:
     if x.initial or y.initial:
         if x.initial and y.initial:
             return 0.0 if x.initial == y.initial else INITIAL_MISMATCH
         letter, other = (x.initial, y) if x.initial else (y.initial, x)
         return INITIAL_COST if other.first == letter else INITIAL_MISMATCH
-    return _seq(x.ids, y.ids, cutoff)
+    return _seq(x.ids, y.ids, cutoff, sub)
 
 
-def _words_distance(wa: tuple[_Word, ...], wb: tuple[_Word, ...], cutoff: float = INF) -> float:
+def _words_distance(wa: tuple[_Word, ...], wb: tuple[_Word, ...], cutoff: float = INF,
+                    sub: list[list[float]] = _SUB) -> float:
     n = len(wa)
     if n == len(wb):
-        cost = [[_word_cost(x, y, cutoff) for y in wb] for x in wa]
+        cost = [[_word_cost(x, y, cutoff, sub) for y in wb] for x in wa]
         best = sum(cost[i][i] for i in range(n))
         if 1 < n <= MAX_PERMUTED_WORDS:
             for perm in permutations(range(n)):
@@ -320,25 +453,25 @@ def _words_distance(wa: tuple[_Word, ...], wb: tuple[_Word, ...], cutoff: float 
         return best
     # A different number of words (a dropped surname, "Meenakshisundaram" as
     # one word): compare as one joined sequence, so every missing sound costs.
-    return _seq(tuple(t for w in wa for t in w.ids), tuple(t for w in wb for t in w.ids), cutoff)
+    return _seq(tuple(t for w in wa for t in w.ids), tuple(t for w in wb for t in w.ids), cutoff, sub)
 
 
 Variants = tuple[tuple[float, tuple[_Word, ...]], ...]
 
 
-def _variants_distance(va: Variants, vb: Variants, cutoff: float = INF) -> float:
+def _variants_distance(va: Variants, vb: Variants, cutoff: float = INF, sub: list[list[float]] = _SUB) -> float:
     """Cheapest pairing of two names' variants. Above `cutoff`, only a lower bound."""
     best = INF
     for pa, wa in va:
         for pb, wb in vb:
             limit = min(best, cutoff) - pa - pb
-            d = pa + pb + _words_distance(wa, wb, limit)
+            d = pa + pb + _words_distance(wa, wb, limit, sub)
             if d < best:
                 best = d
     return best
 
 
-def distance(a: str, b: str) -> float:
+def distance(a: str, b: str, *, confusions: Confusions | None = None) -> float:
     """
     Distance between two names of one or more words, in any mix of scripts.
 
@@ -346,11 +479,14 @@ def distance(a: str, b: str) -> float:
     honorifics (Rameshbhai) and words like Devi or Kumar may be left out for a
     small penalty, initials match words that start with the same letter, and
     words may come in any order for a small penalty.
+
+    `confusions` replaces the default confusion table (see `Confusions`).
     """
+    sub = _table(confusions)._sub
     va, vb = _variants(a), _variants(b)
     if not va or not vb:
         return INF
-    return round(_variants_distance(va, vb), 6)       # 1.8, not 1.7999999999999998
+    return round(_variants_distance(va, vb, INF, sub), 6)       # 1.8, not 1.7999999999999998
 
 
 @lru_cache(maxsize=50_000)

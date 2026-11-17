@@ -66,10 +66,27 @@ English phonetic codes (Soundex, Metaphone) follow English spelling rules and do
 | `Matcher.best_match(heard, top=3) -> list[Match]` | Closest references, nearest first; equal distances keep list order. |
 | `best_match(heard, references, top=3)` | Shortcut for a one-off list. |
 | `explain(a, b) -> Explanation` | The steps behind a distance: each sound kept, swapped, added or dropped, with the reason from the confusion table, plus titles ignored, words left out, initials and reordering. `print()` it for a readable table. |
+| `Confusions` | The confusion table, as a value you can change. `Confusions.default()` is the shipped one; `.merged({("v", "b"): 0.1})` adds or overrides rows, `.without(("v", "b"))` removes them, `Confusions.from_csv(path)` reads your own. Pass it as `confusions=` to `distance`, `explain`, `Matcher` and `best_match`. |
 | `to_roman(text) -> str` | Devanagari / Tamil / Latin → phonetic Roman. |
 | `plain(text) -> str` | Remove the retroflex marks: *baaṛmer* → *baarmer*. |
 | `script_of(text) -> str` | `"devanagari"`, `"tamil"` or `"latin"`. |
 | `tokenize(word) -> tuple[str, ...]` | The sounds the distance is computed over. |
+
+### Your own confusions
+
+The default table is tuned for all of India. If your callers or your speech-to-text engine mix up particular sounds more (or less) often, change the table rather than the code:
+
+```python
+from misheard import Confusions, Matcher
+
+bihar = Confusions.default().merged({("v", "b"): (0.1, "b for v in Bihar")})
+Matcher(people, confusions=bihar).best_match("Binod Kumar")
+
+# A list with both a Vinod and a Binod needs v and b kept apart:
+strict = Confusions.default().without(("v", "b"))
+```
+
+Sounds are the ones `tokenize` returns (all listed in `misheard.SOUNDS`). A CSV for `Confusions.from_csv` has the same columns as [`data/confusions.csv`](https://github.com/trivedi-aman/misheard/blob/main/src/misheard/data/confusions.csv): `a,b,cost,why`.
 
 The library does not decide whether a match is good enough, because that threshold depends on your application. A voice agent might accept a match below about 0.8 when it is at least 1.0 ahead of the next candidate, read back anything below 1.8, and ask again otherwise. Those values come from the project this library was extracted from; tune them on your own data.
 
